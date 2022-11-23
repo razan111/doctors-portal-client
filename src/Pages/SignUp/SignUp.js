@@ -1,8 +1,9 @@
 import React, { useContext, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthProvider';
 import toast from 'react-hot-toast';
+import useToken from '../../hocks/useToken';
 
 const SignUp = () => {
     const {createUser, updateUser} = useContext(AuthContext)
@@ -10,6 +11,14 @@ const SignUp = () => {
     const { register, handleSubmit, formState: { errors } } = useForm();
 
     const [signUpError , setSignUpError] = useState('')
+    const [createdUserEmail, setCreatedUserEmail]=  useState('')
+    const [token] = useToken(createdUserEmail)
+
+    const navigate = useNavigate()
+
+    if(token){
+        navigate('/')
+    }
 
     const handleSignup = data => {
         console.log(data)
@@ -19,12 +28,14 @@ const SignUp = () => {
         .then(result => {
             const user = result.user
             console.log(user)
-            toast('Account create Successfully')
+            toast.success('Account create Successfully')
             const userInfo ={
                 displayName: data.name
             }
             updateUser(userInfo)
-            .then(() => {})
+            .then(() => {
+                saveUser(data.name, data.email)
+            })
             .catch(err => console.error(err))
 
         })
@@ -33,6 +44,36 @@ const SignUp = () => {
             console.error(err)
         })
     }
+
+
+    const saveUser = (name, email) =>{
+        const user = {name, email}
+        fetch('http://localhost:5000/users', {
+            method: "POST",
+            headers: {
+                'content-type' : 'application/json'
+            },
+            body: JSON.stringify(user)
+        })
+        .then(res => res.json())
+        .then(data => {
+            setCreatedUserEmail(email)
+        })
+    }
+
+
+    // const getUserToken = email =>{
+    //     fetch(`http://localhost:5000/jwt?email=${email}`)
+    //     .then(res => res.json())
+    //     .then(data => {
+    //         if(data.accessToken){
+    //             localStorage.setItem('accessToken', data.accessToken)
+    //             navigate('/')
+    //         }
+    //     })
+    // }
+  
+
     return (
         <div className='md:h-[800px] h-[600px] flex justify-center items-center '>
             <div className='md:w-96 w-80 p-7 border-solid border-1 rounded-xl shadow-2xl'>
